@@ -1,0 +1,44 @@
+# Ambientes Virtuais Python
+.venv/
+venv/
+env/
+ENV/
+
+# Caches e Bytecode Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Certificados, Chaves Privadas e Keystores (Segurança)
+*.p12
+*.jks
+*.keystore
+*.key
+*.pem
+*.crt
+trino/keystore.p12
+
+# Arquivos de Variáveis de Ambiente e Segredos
+.env
+.env.local
+*.secret
+
+# Dados Brutos e Datasets (Data Lake - preservar apenas a estrutura com .gitkeep)
+data/raw/*
+!data/raw/.gitkeep
+*.csv
+*.parquet
+*.jsonl
+
+# Arquivos Residuais e Temporários
+index.html
+*.log
+.DS_Store
+Thumbs.db
