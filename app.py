@@ -1,16 +1,22 @@
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
 import trino
 import urllib3
-from datetime import datetime
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Configuração global de formato numérico no Plotly (vírgula decimal e ponto de milhar)
-pio.templates["plotly_dark"].layout.separators = ",."
+# Configuração da Página (deve ser o primeiro comando Streamlit da aplicação)
+st.set_page_config(
+    page_title="Lakehouse Analytics | Trino & Iceberg",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Configuração global de tema no Plotly
+pio.templates.default = "plotly_dark"
 
 # Funções auxiliares de formatação pt-BR
 def fmt_moeda(val):
@@ -27,14 +33,6 @@ def fmt_decimal(val):
     if pd.isna(val) or val is None:
         return "0,00"
     return f"{float(val):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-# Configuração da Página
-st.set_page_config(
-    page_title="Lakehouse Analytics | Trino & Iceberg",
-    page_icon="⚡",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Estilização CSS personalizada
 st.markdown("""
@@ -56,9 +54,10 @@ st.markdown("""
         margin-bottom: 6px;
     }
     .metric-value {
-        font-size: 1.8rem;
+        font-size: clamp(1.35rem, 1.8vw, 1.85rem);
         font-weight: 700;
         color: #38bdf8;
+        white-space: nowrap;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -198,7 +197,7 @@ else:
     ]
 
 # Cabeçalho Principal
-st.title("⚡ Lakehouse Executive Dashboard")
+st.title("⚡ Lakehouse - Dashboard")
 if len(date_range) == 2:
     st.caption(f"Período: **{date_range[0].strftime('%d/%m/%Y')}** a **{date_range[1].strftime('%d/%m/%Y')}** | Dados lidos diretamente do **Trino** sobre tabelas **Apache Iceberg**")
 else:
@@ -211,12 +210,19 @@ ticket_medio = total_receita / total_pedidos if total_pedidos > 0 else 0.0
 total_itens = df_filtered['quantidade'].sum()
 clientes_unicos = df_filtered['cliente_email'].nunique()
 
-col1, col2, col3, col4, col5 = st.columns(5)
+str_receita = fmt_moeda(total_receita)
+str_ticket = fmt_moeda(ticket_medio)
+
+# Largura proporcional dinâmica: quanto maior o valor de Receita Total, mais espaço é concedido ao card
+peso_receita = round(max(1.35, min(2.0, len(str_receita) / 8.5)), 2)
+peso_ticket = round(max(1.05, min(1.35, len(str_ticket) / 10.0)), 2)
+
+col1, col2, col3, col4, col5 = st.columns([peso_receita, 0.9, peso_ticket, 0.9, 0.9])
 with col1:
     st.markdown(f"""
     <div class="metric-card">
         <div class="metric-title">Receita Total</div>
-        <div class="metric-value">{fmt_moeda(total_receita)}</div>
+        <div class="metric-value">{str_receita}</div>
     </div>
     """, unsafe_allow_html=True)
 with col2:
@@ -230,7 +236,7 @@ with col3:
     st.markdown(f"""
     <div class="metric-card">
         <div class="metric-title">Ticket Médio</div>
-        <div class="metric-value">{fmt_moeda(ticket_medio)}</div>
+        <div class="metric-value">{str_ticket}</div>
     </div>
     """, unsafe_allow_html=True)
 with col4:
@@ -276,7 +282,7 @@ with tab1:
             labels={'data_venda': 'Mês', 'valor_total': 'Faturamento'},
             color_discrete_sequence=['#0ea5e9']
         )
-        fig_tempo.update_layout(template="plotly_dark", separators=",.", margin=dict(l=20, r=20, t=40, b=20))
+        fig_tempo.update_layout(template="plotly_dark", separators=",.", margin={"l": 20, "r": 20, "t": 40, "b": 20})
         fig_tempo.update_yaxes(tickprefix="R$ ", tickformat=",.2f")
         fig_tempo.update_xaxes(tickformat="%d/%m/%Y")
         fig_tempo.update_traces(hovertemplate="<b>Data: %{x|%d/%m/%Y}</b><br>Faturamento: R$ %{y:,.2f}<extra></extra>")
@@ -293,7 +299,7 @@ with tab1:
             hole=0.45,
             color_discrete_sequence=px.colors.sequential.Teal
         )
-        fig_cat.update_layout(template="plotly_dark", separators=",.", margin=dict(l=20, r=20, t=40, b=20))
+        fig_cat.update_layout(template="plotly_dark", separators=",.", margin={"l": 20, "r": 20, "t": 40, "b": 20})
         fig_cat.update_traces(
             textinfo="percent+label",
             hovertemplate="<b>%{label}</b><br>Receita: R$ %{value:,.2f}<br>Participação: %{percent}<extra></extra>"
@@ -314,7 +320,7 @@ with tab1:
             color='valor_total',
             color_continuous_scale="Blues"
         )
-        fig_prod.update_layout(template="plotly_dark", separators=",.", margin=dict(l=20, r=20, t=40, b=20), showlegend=False)
+        fig_prod.update_layout(template="plotly_dark", separators=",.", margin={"l": 20, "r": 20, "t": 40, "b": 20}, showlegend=False)
         fig_prod.update_xaxes(tickprefix="R$ ", tickformat=",.2f")
         fig_prod.update_traces(hovertemplate="<b>%{y}</b><br>Faturamento: R$ %{x:,.2f}<extra></extra>")
         st.plotly_chart(fig_prod, width='stretch')
@@ -331,7 +337,7 @@ with tab1:
             color='valor_total',
             color_continuous_scale="Viridis"
         )
-        fig_uf.update_layout(template="plotly_dark", separators=",.", margin=dict(l=20, r=20, t=40, b=20), showlegend=False)
+        fig_uf.update_layout(template="plotly_dark", separators=",.", margin={"l": 20, "r": 20, "t": 40, "b": 20}, showlegend=False)
         fig_uf.update_yaxes(tickprefix="R$ ", tickformat=",.2f")
         fig_uf.update_traces(hovertemplate="<b>UF: %{x}</b><br>Faturamento: R$ %{y:,.2f}<extra></extra>")
         st.plotly_chart(fig_uf, width='stretch')
@@ -370,7 +376,7 @@ with tab2:
                 labels={'estado': 'UF', 'receita_total': 'Receita', 'categoria': 'Categoria'},
                 color_discrete_sequence=px.colors.qualitative.Safe
             )
-            fig_gold_bar.update_layout(template="plotly_dark", separators=",.", margin=dict(l=20, r=20, t=40, b=20))
+            fig_gold_bar.update_layout(template="plotly_dark", separators=",.", margin={"l": 20, "r": 20, "t": 40, "b": 20})
             fig_gold_bar.update_yaxes(tickprefix="R$ ", tickformat=",.2f")
             fig_gold_bar.update_traces(hovertemplate="<b>UF: %{x}</b><br>Categoria: %{data.name}<br>Receita: R$ %{y:,.2f}<extra></extra>")
             st.plotly_chart(fig_gold_bar, width='stretch')
